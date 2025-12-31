@@ -64,16 +64,15 @@ export function LazorPayButton({
   // Variant classes
   const variantClasses = {
     default: `
-      bg-gradient-to-r from-emerald-500 to-cyan-500
-      hover:from-emerald-400 hover:to-cyan-400
-      text-black font-semibold
-      shadow-lg shadow-emerald-500/25
+      bg-violet-600/90 hover:bg-violet-600
+      text-white font-semibold
+      shadow-lg shadow-violet-500/25
     `,
     outline: `
       bg-transparent
-      border-2 border-emerald-500
-      text-emerald-400 font-semibold
-      hover:bg-emerald-500/10
+      border-2 border-violet-500
+      text-violet-400 font-semibold
+      hover:bg-violet-500/10
     `,
     minimal: `
       bg-white/5
@@ -142,7 +141,7 @@ export function LazorPayLink({
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className={`text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors ${className}`}
+        className={`text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors ${className}`}
       >
         {children || `Pay ${amount} ${token}`}
       </button>

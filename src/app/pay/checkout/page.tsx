@@ -20,6 +20,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { LazorPayButton } from "@/components/payment/LazorPayButton";
 import { truncateAddress, formatAmount, isValidSolanaAddress } from "@/lib/utils/format";
+import { incrementPaymentLinkViews, incrementPaymentLinkPayments } from "@/lib/utils/storage";
 
 function PaymentCheckoutContent() {
   const searchParams = useSearchParams();
@@ -30,15 +31,29 @@ function PaymentCheckoutContent() {
   const token = (searchParams.get("token") as "SOL" | "USDC") || "SOL";
   const memo = searchParams.get("memo") || "";
   const merchantName = searchParams.get("merchant") || "Payment Request";
+  const linkId = searchParams.get("linkId") || "";
 
   // State
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [lastSignature, setLastSignature] = useState("");
+  const [viewTracked, setViewTracked] = useState(false);
 
   // Validate parameters
   const isValid = isValidSolanaAddress(recipient) && amount > 0;
 
+  // Track view when page loads (only once)
+  useEffect(() => {
+    if (linkId && isValid && !viewTracked) {
+      incrementPaymentLinkViews(linkId);
+      setViewTracked(true);
+    }
+  }, [linkId, isValid, viewTracked]);
+
   const handlePaymentSuccess = (result: { signature: string }) => {
+    // Track payment for the link
+    if (linkId) {
+      incrementPaymentLinkPayments(linkId);
+    }
     setPaymentSuccess(true);
     setLastSignature(result.signature);
   };
@@ -93,8 +108,8 @@ function PaymentCheckoutContent() {
             {paymentSuccess ? (
               /* Success State */
               <div className="text-center py-4">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-violet-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-10 h-10 text-violet-400" />
                 </div>
                 <h1 className="text-2xl font-light text-white mb-2">
                   Payment Successful!
@@ -115,7 +130,7 @@ function PaymentCheckoutContent() {
                   href={`https://explorer.solana.com/tx/${lastSignature}?cluster=devnet`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-emerald-400 text-sm hover:underline"
+                  className="text-violet-400 text-sm hover:underline"
                 >
                   View on Solana Explorer →
                 </a>
@@ -125,8 +140,8 @@ function PaymentCheckoutContent() {
               <>
                 {/* Merchant Info */}
                 <div className="text-center mb-6">
-                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-black" />
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-violet-600 flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-white" />
                   </div>
                   <h1 className="text-xl font-medium text-white">
                     {merchantName}
@@ -159,7 +174,7 @@ function PaymentCheckoutContent() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/60 text-sm">Network Fee</span>
-                    <span className="text-emerald-400 font-medium text-sm">
+                    <span className="text-violet-400 font-medium text-sm">
                       Sponsored (Free)
                     </span>
                   </div>
@@ -227,7 +242,7 @@ export default function PaymentCheckoutPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full" />
         </div>
       }
     >

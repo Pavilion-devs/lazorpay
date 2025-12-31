@@ -20,6 +20,7 @@ import {
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { truncateAddress, formatAmount, copyToClipboard } from "@/lib/utils/format";
 import { getExplorerUrl, getTokenAddress } from "@/lib/lazorkit/config";
+import { addTransaction } from "@/lib/utils/storage";
 import type { PaymentStatus, PaymentResult } from "@/types";
 
 interface PaymentModalProps {
@@ -98,6 +99,36 @@ export function PaymentModal({
       setSignature(txSignature);
       setStatus("success");
 
+      // Record the outgoing transaction in localStorage (from sender's perspective)
+      if (smartWalletPubkey) {
+        addTransaction({
+          signature: txSignature,
+          type: "outgoing",
+          amount: amount,
+          token: token,
+          from: smartWalletPubkey.toString(),
+          to: recipient,
+          timestamp: Date.now(),
+          status: "confirmed",
+          memo: memo,
+          walletAddress: smartWalletPubkey.toString(),
+        });
+
+        // Also record as incoming transaction for recipient
+        addTransaction({
+          signature: txSignature,
+          type: "incoming",
+          amount: amount,
+          token: token,
+          from: smartWalletPubkey.toString(),
+          to: recipient,
+          timestamp: Date.now(),
+          status: "confirmed",
+          memo: memo,
+          walletAddress: recipient,
+        });
+      }
+
       onSuccess?.({
         signature: txSignature,
         status: "success",
@@ -159,8 +190,8 @@ export function PaymentModal({
         {/* Success State */}
         {status === "success" && (
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-violet-500/20 flex items-center justify-center">
+              <CheckCircle2 className="w-8 h-8 text-violet-400" />
             </div>
 
             <p className="text-white/80 mb-4">
@@ -179,7 +210,7 @@ export function PaymentModal({
                   className="text-white/40 hover:text-white transition-colors"
                 >
                   {copied ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-violet-400" />
                   ) : (
                     <Copy className="w-4 h-4" />
                   )}
@@ -200,7 +231,7 @@ export function PaymentModal({
               </a>
               <button
                 onClick={handleClose}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors"
               >
                 Done
               </button>
@@ -243,8 +274,8 @@ export function PaymentModal({
             </div>
 
             {/* Fee info */}
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 mb-6">
-              <div className="flex items-center gap-2 text-emerald-400 text-sm">
+            <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 mb-6">
+              <div className="flex items-center gap-2 text-violet-400 text-sm">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Network fee: <strong>Sponsored (Free!)</strong></span>
               </div>
