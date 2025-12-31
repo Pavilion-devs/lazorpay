@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowUpRight,
   Fingerprint,
+  Zap,
   CreditCard,
   Shield,
   Eye,
@@ -15,6 +15,7 @@ import {
   Lock,
   ShieldCheck,
   Plus,
+  Mail,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -164,7 +165,7 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center animate-fade-slide-in mt-10 gap-x-4 gap-y-4 items-center">
-              <GlowButton href="/dashboard">Launch Dashboard</GlowButton>
+              <GlowButton href="/checkout">Try Live Demo</GlowButton>
             </div>
           </div>
 
@@ -259,13 +260,9 @@ export default function LandingPage() {
                       </div>
                       <div className="text-right">
                         <div className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-2 py-1">
-                          <Image
-                            src="/logo.png"
-                            alt="LazorPay"
-                            width={20}
-                            height={20}
-                            className="rounded"
-                          />
+                          <span className="h-5 w-5 rounded-md bg-gradient-to-tr from-violet-500 to-fuchsia-500 inline-flex items-center justify-center">
+                            <Zap className="w-3 h-3 text-white" />
+                          </span>
                           <span className="text-sm text-white tracking-tight">
                             LazorPay
                           </span>
@@ -325,7 +322,7 @@ export default function LandingPage() {
                       Gasless payments powered by LazorKit
                     </div>
                     <Link
-                      href="/dashboard"
+                      href="/checkout"
                       className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-black/20 backdrop-blur-sm px-3 py-2 text-sm text-white transition hover:bg-black/30 hover:scale-105 transform tracking-tight"
                     >
                       <Eye className="w-4 h-4" />
@@ -350,10 +347,10 @@ export default function LandingPage() {
                   How LazorPay Works
                 </h3>
                 <Link
-                  href="/dashboard"
+                  href="/checkout"
                   className="inline-flex items-center gap-2 text-sm hover:text-white transition-colors tracking-tight text-violet-400"
                 >
-                  Go to Dashboard
+                  Try demo
                   <ArrowUpRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -497,14 +494,14 @@ export default function LandingPage() {
               </ul>
               <div className="mt-8 flex items-center gap-3">
                 <Link
-                  href="/dashboard"
+                  href="/checkout"
                   className="inline-flex items-center gap-2 rounded-md bg-white/90 backdrop-blur-sm px-4 py-2 text-sm text-black transition hover:bg-white hover:scale-105 transform tracking-tight shadow-lg"
                 >
                   <Eye className="w-4 h-4" />
-                  Open Dashboard
+                  Try demo
                 </Link>
                 <Link
-                  href="/dashboard"
+                  href="/pay"
                   className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-black/20 backdrop-blur-sm px-4 py-2 text-sm text-white transition hover:bg-black/30 hover:scale-105 transform tracking-tight"
                 >
                   <Plus className="w-4 h-4" />
