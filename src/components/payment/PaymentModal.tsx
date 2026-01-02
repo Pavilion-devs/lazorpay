@@ -18,10 +18,11 @@ import {
   Copy,
   Wallet,
 } from "lucide-react";
-import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { PublicKey, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from "@solana/web3.js";
 import { truncateAddress, formatAmount, copyToClipboard } from "@/lib/utils/format";
 import { getExplorerUrl, LAZORKIT_CONFIG } from "@/lib/lazorkit/config";
 import { addTransaction } from "@/lib/utils/storage";
+import { buildUSDCTransferInstructions, createConnection } from "@/lib/solana/tokens";
 import type { PaymentStatus, PaymentResult } from "@/types";
 
 interface PaymentModalProps {
@@ -76,22 +77,34 @@ export function PaymentModal({
       setStatus("signing");
       setError("");
 
-      // Create transfer instruction
       const recipientPubkey = new PublicKey(recipient);
+      let instructions: TransactionInstruction[];
 
-      // For now, we'll handle SOL transfers
-      // USDC transfers would require SPL token program instructions
-      const instruction = SystemProgram.transfer({
-        fromPubkey: smartWalletPubkey,
-        toPubkey: recipientPubkey,
-        lamports: Math.floor(amount * LAMPORTS_PER_SOL),
-      });
+      if (token === "USDC") {
+        // Build USDC transfer instructions (may include ATA creation)
+        const connection = createConnection();
+        instructions = await buildUSDCTransferInstructions({
+          connection,
+          from: smartWalletPubkey,
+          to: recipientPubkey,
+          amount,
+        });
+      } else {
+        // SOL transfer
+        instructions = [
+          SystemProgram.transfer({
+            fromPubkey: smartWalletPubkey,
+            toPubkey: recipientPubkey,
+            lamports: Math.floor(amount * LAMPORTS_PER_SOL),
+          }),
+        ];
+      }
 
       setStatus("confirming");
 
       // Sign and send transaction with proper network configuration
       const txSignature = await signAndSendTransaction({
-        instructions: [instruction],
+        instructions,
         transactionOptions: {
           clusterSimulation: LAZORKIT_CONFIG.CLUSTER,
         },

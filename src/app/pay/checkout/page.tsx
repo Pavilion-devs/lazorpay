@@ -22,10 +22,11 @@ import {
   Copy,
 } from "lucide-react";
 import { useWallet } from "@lazorkit/wallet";
-import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { PublicKey, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from "@solana/web3.js";
 import { truncateAddress, formatAmount, isValidSolanaAddress, copyToClipboard } from "@/lib/utils/format";
 import { getExplorerUrl, LAZORKIT_CONFIG } from "@/lib/lazorkit/config";
 import { incrementPaymentLinkViews, incrementPaymentLinkPayments, addTransaction } from "@/lib/utils/storage";
+import { buildUSDCTransferInstructions, createConnection } from "@/lib/solana/tokens";
 
 type PaymentStatus = "idle" | "connecting" | "signing" | "confirming" | "success" | "error";
 
@@ -82,17 +83,33 @@ function PaymentCheckoutContent() {
       setError("");
 
       const recipientPubkey = new PublicKey(recipient);
-      const instruction = SystemProgram.transfer({
-        fromPubkey: smartWalletPubkey,
-        toPubkey: recipientPubkey,
-        lamports: Math.floor(amount * LAMPORTS_PER_SOL),
-      });
+      let instructions: TransactionInstruction[];
+
+      if (token === "USDC") {
+        // Build USDC transfer instructions (may include ATA creation)
+        const connection = createConnection();
+        instructions = await buildUSDCTransferInstructions({
+          connection,
+          from: smartWalletPubkey,
+          to: recipientPubkey,
+          amount,
+        });
+      } else {
+        // SOL transfer
+        instructions = [
+          SystemProgram.transfer({
+            fromPubkey: smartWalletPubkey,
+            toPubkey: recipientPubkey,
+            lamports: Math.floor(amount * LAMPORTS_PER_SOL),
+          }),
+        ];
+      }
 
       setStatus("confirming");
 
       // Sign and send transaction with proper network configuration
       const txSignature = await signAndSendTransaction({
-        instructions: [instruction],
+        instructions,
         transactionOptions: {
           clusterSimulation: LAZORKIT_CONFIG.CLUSTER,
         },
