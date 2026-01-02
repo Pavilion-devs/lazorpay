@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { truncateAddress, formatAmount, copyToClipboard } from "@/lib/utils/format";
-import { getExplorerUrl, getTokenAddress } from "@/lib/lazorkit/config";
+import { getExplorerUrl, LAZORKIT_CONFIG } from "@/lib/lazorkit/config";
 import { addTransaction } from "@/lib/utils/storage";
 import type { PaymentStatus, PaymentResult } from "@/types";
 
@@ -87,12 +87,11 @@ export function PaymentModal({
 
       setStatus("confirming");
 
-      // Sign and send transaction
+      // Sign and send transaction with proper network configuration
       const txSignature = await signAndSendTransaction({
         instructions: [instruction],
         transactionOptions: {
-          // Use USDC for gas fees (gasless for user)
-          feeToken: getTokenAddress("USDC"),
+          clusterSimulation: LAZORKIT_CONFIG.CLUSTER,
         },
       });
 
@@ -135,7 +134,26 @@ export function PaymentModal({
       });
     } catch (err) {
       console.error("Payment error:", err);
-      const errorMessage = err instanceof Error ? err.message : "Payment failed";
+
+      // Parse error message for better user feedback
+      let errorMessage = "Payment failed";
+      if (err instanceof Error) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes("insufficient") || msg.includes("balance")) {
+          errorMessage = "Insufficient balance. Please add funds to your wallet.";
+        } else if (msg.includes("cancelled") || msg.includes("canceled") || msg.includes("abort")) {
+          errorMessage = "Transaction was cancelled.";
+        } else if (msg.includes("timeout")) {
+          errorMessage = "Transaction timed out. Please try again.";
+        } else if (msg.includes("sign")) {
+          errorMessage = "Signing failed. Please try again.";
+        } else if (msg.includes("network") || msg.includes("connection")) {
+          errorMessage = "Network error. Please check your connection.";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+
       setError(errorMessage);
       setStatus("error");
       onError?.(err instanceof Error ? err : new Error(errorMessage));
