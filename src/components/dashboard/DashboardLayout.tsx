@@ -38,9 +38,10 @@ function Sidebar({ disconnect }: { disconnect: () => void }) {
           <Image
             src="/logo.png"
             alt="LazorPay"
-            width={40}
-            height={40}
-            className="rounded-lg"
+            width={120}
+            height={120}
+            className="rounded-lg w-auto h-10"
+            priority
           />
         </Link>
       </div>
@@ -106,14 +107,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               Connect your passkey wallet to access the dashboard and manage your payments.
             </p>
           </div>
-          <ConnectButton className="mx-auto" />
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 mt-6 text-sm text-zinc-400 hover:text-white transition-colors tracking-tight"
-          >
-            <Home className="w-4 h-4" />
-            Back to Home
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <ConnectButton />
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm text-zinc-400 hover:text-white transition-colors tracking-tight"
+            >
+              <Home className="w-4 h-4" />
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     );

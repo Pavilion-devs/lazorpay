@@ -229,7 +229,7 @@ function PaymentCheckoutContent() {
               View on Explorer
             </a>
             <Link
-              href="/"
+              href="/dashboard"
               className="flex-1 px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors text-center"
             >
               Done

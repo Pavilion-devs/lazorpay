@@ -6,6 +6,7 @@
  */
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useWallet } from "@lazorkit/wallet";
 import {
   X,
@@ -46,6 +47,7 @@ export function PaymentModal({
   onSuccess,
   onError,
 }: PaymentModalProps) {
+  const router = useRouter();
   const { connect, signAndSendTransaction, isConnected, smartWalletPubkey, isConnecting } =
     useWallet();
 
@@ -248,7 +250,10 @@ export function PaymentModal({
                 View on Explorer
               </a>
               <button
-                onClick={handleClose}
+                onClick={() => {
+                  handleClose();
+                  router.push("/dashboard");
+                }}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors"
               >
                 Done
