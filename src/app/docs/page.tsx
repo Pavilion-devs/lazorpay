@@ -7,22 +7,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   Book,
   Code2,
   Zap,
   Package,
-  Settings,
   Fingerprint,
   CreditCard,
   CheckCircle2,
   Copy,
   Check,
   ExternalLink,
+  Coins,
+  Home,
+  Settings,
+  Wallet,
+  Link as LinkIcon,
 } from "lucide-react";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 
 type Tab = "quickstart" | "components" | "hooks" | "examples";
 
@@ -141,6 +144,61 @@ export function CheckoutForm({ recipient, amount }) {
     </div>
   );
 }`,
+  usdcPayment: `import { useWallet } from "@lazorkit/wallet";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { buildUSDCTransferInstructions } from "@/lib/solana/tokens";
+
+export function USDCPaymentButton({ recipient, amount }) {
+  const { signAndSendTransaction, smartWalletPubkey } = useWallet();
+
+  const handlePayment = async () => {
+    const connection = new Connection("https://api.devnet.solana.com");
+
+    // Build USDC transfer instructions (auto-creates recipient ATA if needed)
+    const instructions = await buildUSDCTransferInstructions({
+      connection,
+      from: smartWalletPubkey!,
+      to: new PublicKey(recipient),
+      amount, // Human-readable amount (e.g., 10 for 10 USDC)
+    });
+
+    const signature = await signAndSendTransaction({
+      instructions,
+      transactionOptions: {
+        clusterSimulation: "devnet",
+      },
+    });
+
+    console.log("USDC Transfer:", signature);
+  };
+
+  return <button onClick={handlePayment}>Pay {amount} USDC</button>;
+}`,
+  paymentLink: `// Generate a shareable payment link
+function generatePaymentLink({ recipient, amount, token, memo, merchantName }) {
+  const baseUrl = window.location.origin;
+  const params = new URLSearchParams({
+    to: recipient,
+    amount: amount.toString(),
+    token: token,
+  });
+
+  if (memo) params.set("memo", memo);
+  if (merchantName) params.set("merchant", merchantName);
+
+  return \`\${baseUrl}/pay/checkout?\${params.toString()}\`;
+}
+
+// Usage
+const link = generatePaymentLink({
+  recipient: "YourWalletAddress...",
+  amount: 10,
+  token: "USDC",
+  memo: "Order #1234",
+  merchantName: "My Store",
+});
+
+// Result: https://yoursite.com/pay/checkout?to=...&amount=10&token=USDC&memo=Order%20%231234&merchant=My%20Store`,
 };
 
 function CodeBlock({
@@ -181,62 +239,96 @@ export default function DocsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("quickstart");
 
   return (
-    <div className="min-h-screen">
-      <Header />
-
-      <main className="py-12">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Back link */}
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-8 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
+    <div className="min-h-screen flex">
+      {/* Fixed Sidebar */}
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-zinc-950/90 border-r border-white/10 flex flex-col z-50">
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10">
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/lazorpay-logo.svg"
+              alt="LazorPay"
+              width={120}
+              height={40}
+              className="w-auto h-8"
+            />
           </Link>
+        </div>
 
-          <div className="grid lg:grid-cols-4 gap-8">
-            {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-8">
-                <h1 className="text-2xl font-light text-white mb-6">
-                  Documentation
-                </h1>
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="mb-4">
+            <Link
+              href="/"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              <Home className="w-4 h-4" />
+              <span className="text-sm font-medium">Home</span>
+            </Link>
+          </div>
 
-                <nav className="space-y-1">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-colors ${
-                        activeTab === tab.id
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                          : "text-white/60 hover:text-white hover:bg-white/5"
-                      }`}
-                    >
-                      <tab.icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{tab.label}</span>
-                    </button>
-                  ))}
-                </nav>
+          <p className="px-4 text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+            Documentation
+          </p>
 
-                <div className="mt-8 pt-6 border-t border-white/10">
-                  <a
-                    href="https://docs.lazorkit.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    LazorKit Official Docs
-                  </a>
-                </div>
-              </div>
-            </div>
+          <nav className="space-y-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-violet-500/10 text-violet-400 border border-violet-500/30"
+                    : "text-white/60 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span className="text-sm font-medium">{tab.label}</span>
+              </button>
+            ))}
+          </nav>
 
-            {/* Content */}
-            <div className="lg:col-span-3">
-              {/* Quick Start Tab */}
+          <div className="mt-8 pt-6 border-t border-white/10">
+            <p className="px-4 text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
+              Resources
+            </p>
+            <a
+              href="https://docs.lazorkit.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="text-sm font-medium">LazorKit Docs</span>
+            </a>
+            <a
+              href="https://github.com/user/lazorpay"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              <Code2 className="w-4 h-4" />
+              <span className="text-sm font-medium">GitHub</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-white/10">
+          <Link
+            href="/dashboard"
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
+          >
+            <Wallet className="w-4 h-4" />
+            Dashboard
+          </Link>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 ml-64 min-h-screen">
+        <div className="max-w-4xl mx-auto px-8 py-12">
+          {/* Quick Start Tab */}
               {activeTab === "quickstart" && (
                 <div className="space-y-8">
                   <div>
@@ -464,6 +556,175 @@ export default function DocsPage() {
                       </table>
                     </div>
                   </div>
+
+                  {/* PaymentModal */}
+                  <div className="glass-card p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Wallet className="w-5 h-5 text-violet-400" />
+                      <h3 className="text-lg font-medium text-white">
+                        PaymentModal
+                      </h3>
+                    </div>
+                    <p className="text-white/60 mb-4 text-sm">
+                      A complete payment modal with wallet connection, transaction signing,
+                      and status handling. Supports both SOL and USDC transfers.
+                    </p>
+
+                    <h4 className="text-white font-medium mb-2 text-sm">Props</h4>
+                    <div className="bg-black/30 rounded-lg overflow-hidden mb-4">
+                      <table className="w-full text-sm">
+                        <thead className="bg-white/5">
+                          <tr>
+                            <th className="text-left p-3 text-white/60 font-medium">
+                              Prop
+                            </th>
+                            <th className="text-left p-3 text-white/60 font-medium">
+                              Type
+                            </th>
+                            <th className="text-left p-3 text-white/60 font-medium">
+                              Required
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          <tr>
+                            <td className="p-3 text-white font-mono">isOpen</td>
+                            <td className="p-3 text-white/60">boolean</td>
+                            <td className="p-3 text-violet-400">Yes</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">onClose</td>
+                            <td className="p-3 text-white/60">() =&gt; void</td>
+                            <td className="p-3 text-violet-400">Yes</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">recipient</td>
+                            <td className="p-3 text-white/60">string</td>
+                            <td className="p-3 text-violet-400">Yes</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">amount</td>
+                            <td className="p-3 text-white/60">number</td>
+                            <td className="p-3 text-violet-400">Yes</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">token</td>
+                            <td className="p-3 text-white/60">&quot;SOL&quot; | &quot;USDC&quot;</td>
+                            <td className="p-3 text-white/60">No (default: SOL)</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">memo</td>
+                            <td className="p-3 text-white/60">string</td>
+                            <td className="p-3 text-white/60">No</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">merchantName</td>
+                            <td className="p-3 text-white/60">string</td>
+                            <td className="p-3 text-white/60">No</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">onSuccess</td>
+                            <td className="p-3 text-white/60">(result) =&gt; void</td>
+                            <td className="p-3 text-white/60">No</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">onError</td>
+                            <td className="p-3 text-white/60">(error) =&gt; void</td>
+                            <td className="p-3 text-white/60">No</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <h4 className="text-white font-medium mb-2 text-sm">Features</h4>
+                    <ul className="space-y-2 text-sm text-white/60">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        Automatic wallet connection flow
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        Passkey-based transaction signing
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        Gasless transactions via paymaster
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        SOL and USDC support
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        Transaction status feedback
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* CreatePaymentModal */}
+                  <div className="glass-card p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <LinkIcon className="w-5 h-5 text-violet-400" />
+                      <h3 className="text-lg font-medium text-white">
+                        CreatePaymentModal
+                      </h3>
+                    </div>
+                    <p className="text-white/60 mb-4 text-sm">
+                      A modal for creating shareable payment links with QR code generation.
+                      Perfect for merchants who want to generate payment requests.
+                    </p>
+
+                    <h4 className="text-white font-medium mb-2 text-sm">Props</h4>
+                    <div className="bg-black/30 rounded-lg overflow-hidden mb-4">
+                      <table className="w-full text-sm">
+                        <thead className="bg-white/5">
+                          <tr>
+                            <th className="text-left p-3 text-white/60 font-medium">
+                              Prop
+                            </th>
+                            <th className="text-left p-3 text-white/60 font-medium">
+                              Type
+                            </th>
+                            <th className="text-left p-3 text-white/60 font-medium">
+                              Required
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          <tr>
+                            <td className="p-3 text-white font-mono">isOpen</td>
+                            <td className="p-3 text-white/60">boolean</td>
+                            <td className="p-3 text-violet-400">Yes</td>
+                          </tr>
+                          <tr>
+                            <td className="p-3 text-white font-mono">onClose</td>
+                            <td className="p-3 text-white/60">() =&gt; void</td>
+                            <td className="p-3 text-violet-400">Yes</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <h4 className="text-white font-medium mb-2 text-sm">Features</h4>
+                    <ul className="space-y-2 text-sm text-white/60">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        QR code generation for easy sharing
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        One-click link copying
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        Native share API support
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+                        Pre-filled with connected wallet
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               )}
 
@@ -590,6 +851,113 @@ export default function DocsPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* usePaymentLinks */}
+                  <div className="glass-card p-6">
+                    <h3 className="text-lg font-medium text-white mb-4">
+                      usePaymentLinks()
+                    </h3>
+                    <p className="text-white/60 mb-4 text-sm">
+                      A custom hook for managing payment links with localStorage persistence.
+                    </p>
+
+                    <h4 className="text-white font-medium mb-2 text-sm">
+                      Return Values
+                    </h4>
+                    <div className="space-y-3">
+                      {[
+                        {
+                          name: "paymentLinks",
+                          type: "PaymentLink[]",
+                          desc: "Array of saved payment links",
+                        },
+                        {
+                          name: "createPaymentLink",
+                          type: "(data) => PaymentLink",
+                          desc: "Creates and saves a new payment link",
+                        },
+                        {
+                          name: "deletePaymentLink",
+                          type: "(id: string) => void",
+                          desc: "Deletes a payment link by ID",
+                        },
+                        {
+                          name: "getPaymentLink",
+                          type: "(id: string) => PaymentLink | undefined",
+                          desc: "Retrieves a specific payment link",
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.name}
+                          className="flex items-start gap-4 p-3 rounded-lg bg-white/5"
+                        >
+                          <code className="text-violet-400 font-mono text-sm whitespace-nowrap">
+                            {item.name}
+                          </code>
+                          <div>
+                            <code className="text-white/60 text-xs">
+                              {item.type}
+                            </code>
+                            <p className="text-white/50 text-sm mt-1">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Utility Functions */}
+                  <div className="glass-card p-6">
+                    <h3 className="text-lg font-medium text-white mb-4">
+                      Token Utilities
+                    </h3>
+                    <p className="text-white/60 mb-4 text-sm">
+                      Helper functions for working with SOL and USDC transfers.
+                    </p>
+
+                    <div className="space-y-3">
+                      {[
+                        {
+                          name: "toBaseUnits(amount, token)",
+                          type: "number",
+                          desc: "Convert human-readable amount to token base units (lamports/micro-USDC)",
+                        },
+                        {
+                          name: "fromBaseUnits(amount, token)",
+                          type: "number",
+                          desc: "Convert base units back to human-readable amount",
+                        },
+                        {
+                          name: "buildUSDCTransferInstructions({...})",
+                          type: "Promise<TransactionInstruction[]>",
+                          desc: "Build instructions for USDC transfer (handles ATA creation)",
+                        },
+                        {
+                          name: "getUSDCBalance(connection, wallet)",
+                          type: "Promise<number>",
+                          desc: "Get USDC balance for a wallet address",
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.name}
+                          className="flex items-start gap-4 p-3 rounded-lg bg-white/5"
+                        >
+                          <code className="text-violet-400 font-mono text-sm whitespace-nowrap">
+                            {item.name}
+                          </code>
+                          <div>
+                            <code className="text-white/60 text-xs">
+                              {item.type}
+                            </code>
+                            <p className="text-white/50 text-sm mt-1">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -616,6 +984,36 @@ export default function DocsPage() {
                       status handling.
                     </p>
                     <CodeBlock code={codeSnippets.fullExample} />
+                  </div>
+
+                  {/* USDC Payment Example */}
+                  <div className="glass-card p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Coins className="w-5 h-5 text-violet-400" />
+                      <h3 className="text-lg font-medium text-white">
+                        USDC Payment
+                      </h3>
+                    </div>
+                    <p className="text-white/60 mb-4 text-sm">
+                      Transfer USDC tokens with automatic Associated Token Account creation
+                      for recipients who don&apos;t have a USDC account yet.
+                    </p>
+                    <CodeBlock code={codeSnippets.usdcPayment} />
+                  </div>
+
+                  {/* Payment Link Generation */}
+                  <div className="glass-card p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <LinkIcon className="w-5 h-5 text-violet-400" />
+                      <h3 className="text-lg font-medium text-white">
+                        Payment Link Generation
+                      </h3>
+                    </div>
+                    <p className="text-white/60 mb-4 text-sm">
+                      Create shareable payment links that customers can use to pay you.
+                      Links include recipient, amount, token, and optional memo/merchant info.
+                    </p>
+                    <CodeBlock code={codeSnippets.paymentLink} />
                   </div>
 
                   {/* Live Examples */}
@@ -645,12 +1043,8 @@ export default function DocsPage() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

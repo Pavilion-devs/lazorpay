@@ -13,16 +13,20 @@ LazorPay is a complete payment solution demonstrating how to build passkey-power
 - **Passkey Authentication** - WebAuthn-based login with biometrics
 - **Gasless Transactions** - Paymaster-sponsored fees via LazorKit
 - **Smart Wallet Integration** - PDA-based wallets controlled by passkeys
+- **SOL & USDC Transfers** - Native support for both tokens
 - **Drop-in Components** - Pre-built React components for payments
 - **Payment Links** - Generate shareable links with QR codes
+- **Merchant Dashboard** - Track transactions, revenue, and payment links
 - **TypeScript Support** - Full type safety throughout
 
 ## Live Demo
 
-Try the live demo on Solana Devnet:
-- **Checkout Demo**: Test the full payment flow
-- **Payment Links**: Create shareable payment requests
-- **Documentation**: Interactive API reference
+**[Try LazorPay Live](https://lazorpay-green.vercel.app/)** on Solana Devnet
+
+- **[Checkout Demo](https://lazorpay-green.vercel.app/checkout)**: Test the full payment flow with SOL or USDC
+- **[Payment Links](https://lazorpay-green.vercel.app/pay)**: Create and share payment requests with QR codes
+- **[Merchant Dashboard](https://lazorpay-green.vercel.app/dashboard)**: Track transactions, revenue, and manage links
+- **[Documentation](https://lazorpay-green.vercel.app/docs)**: Interactive API reference with code examples
 
 ## Quick Start
 
@@ -195,26 +199,89 @@ export function PaymentButton({ recipient, amount }: PaymentButtonProps) {
 - Setting `feeToken` enables gasless transactions
 - The user only sees a biometric prompt—no complex UX
 
+## Tutorial 4: USDC Transfers
+
+Transfer USDC tokens with automatic Associated Token Account creation.
+
+```tsx
+// src/components/USDCPayment.tsx
+"use client";
+import { useWallet } from "@lazorkit/wallet";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { buildUSDCTransferInstructions } from "@/lib/solana/tokens";
+
+interface USDCPaymentProps {
+  recipient: string;
+  amount: number; // in USDC
+}
+
+export function USDCPaymentButton({ recipient, amount }: USDCPaymentProps) {
+  const { signAndSendTransaction, smartWalletPubkey } = useWallet();
+
+  const handlePayment = async () => {
+    const connection = new Connection("https://api.devnet.solana.com");
+
+    // Build USDC transfer instructions
+    // Automatically creates recipient's token account if needed
+    const instructions = await buildUSDCTransferInstructions({
+      connection,
+      from: smartWalletPubkey!,
+      to: new PublicKey(recipient),
+      amount, // Human-readable (e.g., 10 for 10 USDC)
+    });
+
+    const signature = await signAndSendTransaction({
+      instructions,
+      transactionOptions: {
+        clusterSimulation: "devnet",
+      },
+    });
+
+    console.log("USDC Transfer:", signature);
+    return signature;
+  };
+
+  return <button onClick={handlePayment}>Pay {amount} USDC</button>;
+}
+```
+
+**Key Points:**
+- `buildUSDCTransferInstructions` handles all the complexity
+- Automatically creates recipient's ATA if it doesn't exist
+- Amount is in human-readable format (not base units)
+- USDC has 6 decimals (handled internally)
+
 ## Project Structure
 
 ```
 lazorpay/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx        # Root layout with provider
-│   │   ├── page.tsx          # Landing page
-│   │   ├── checkout/         # Checkout demo page
-│   │   ├── pay/              # Payment link generator
-│   │   └── docs/             # Documentation page
+│   │   ├── layout.tsx          # Root layout with provider
+│   │   ├── page.tsx            # Landing page
+│   │   ├── checkout/           # Checkout demo page
+│   │   ├── pay/                # Payment link pages
+│   │   │   ├── page.tsx        # Link generator
+│   │   │   └── checkout/       # Checkout page for payment links
+│   │   ├── dashboard/          # Merchant dashboard
+│   │   │   ├── page.tsx        # Dashboard overview
+│   │   │   ├── transactions/   # Transaction history
+│   │   │   ├── links/          # Payment links management
+│   │   │   └── settings/       # Account settings
+│   │   └── docs/               # Documentation page
 │   ├── components/
-│   │   ├── layout/           # Header, Footer
-│   │   ├── wallet/           # ConnectButton
-│   │   └── payment/          # PaymentModal, LazorPayButton
+│   │   ├── layout/             # Header, Footer
+│   │   ├── wallet/             # ConnectButton
+│   │   ├── dashboard/          # Dashboard components
+│   │   └── payment/            # PaymentModal, LazorPayButton
+│   ├── hooks/
+│   │   └── usePaymentLinks.ts  # Payment links state management
 │   ├── lib/
-│   │   ├── lazorkit/         # SDK configuration
-│   │   └── utils/            # Formatting utilities
-│   └── types/                # TypeScript definitions
-└── public/                   # Static assets
+│   │   ├── lazorkit/           # SDK configuration
+│   │   ├── solana/             # Token utilities (USDC transfers)
+│   │   └── utils/              # Formatting, storage utilities
+│   └── types/                  # TypeScript definitions
+└── public/                     # Static assets
 ```
 
 ## Components Reference
