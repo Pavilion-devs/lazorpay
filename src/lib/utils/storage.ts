@@ -104,8 +104,15 @@ export function addTransaction(transaction: Omit<StoredTransaction, "id">): Stor
     id: crypto.randomUUID(),
   };
 
-  // Check for duplicate signatures
-  const exists = transactions.some((tx) => tx.signature === transaction.signature);
+  // Check for duplicate: same signature, same type, same wallet
+  // This allows recording both outgoing (sender) and incoming (recipient) for the same tx
+  const exists = transactions.some(
+    (tx) =>
+      tx.signature === transaction.signature &&
+      tx.type === transaction.type &&
+      tx.walletAddress === transaction.walletAddress
+  );
+
   if (!exists) {
     transactions.unshift(newTransaction); // Add to beginning
     localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
