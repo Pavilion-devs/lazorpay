@@ -6,7 +6,18 @@
 [![Solana](https://img.shields.io/badge/Solana-Devnet-9945FF?style=flat-square)](https://solana.com)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square)](https://nextjs.org)
 
-LazorPay is a complete payment solution demonstrating how to build passkey-powered, gasless payments on Solana using the LazorKit SDK. Users authenticate with Face ID, Touch ID, or Windows Hello—no seed phrases, browser extensions, or SOL for gas required.
+LazorPay is a complete payment solution demonstrating passkey-powered, gasless payments on Solana using the LazorKit SDK. Users authenticate with Face ID, Touch ID, or Windows Hello—no seed phrases, browser extensions, or SOL for gas required.
+
+## Live Demo
+
+**[Try LazorPay Live](https://lazorpay-green.vercel.app/)** on Solana Devnet
+
+| Feature | Link |
+|---------|------|
+| Checkout Demo | [/checkout](https://lazorpay-green.vercel.app/checkout) |
+| Payment Links | [/pay](https://lazorpay-green.vercel.app/pay) |
+| Merchant Dashboard | [/dashboard](https://lazorpay-green.vercel.app/dashboard) |
+| Documentation | [/docs](https://lazorpay-green.vercel.app/docs) |
 
 ## Features
 
@@ -14,33 +25,57 @@ LazorPay is a complete payment solution demonstrating how to build passkey-power
 - **Gasless Transactions** - Paymaster-sponsored fees via LazorKit
 - **Smart Wallet Integration** - PDA-based wallets controlled by passkeys
 - **SOL & USDC Transfers** - Native support for both tokens
-- **Drop-in Components** - Pre-built React components for payments
 - **Payment Links** - Generate shareable links with QR codes
 - **Merchant Dashboard** - Track transactions, revenue, and payment links
-- **TypeScript Support** - Full type safety throughout
-
-## Live Demo
-
-**[Try LazorPay Live](https://lazorpay-green.vercel.app/)** on Solana Devnet
-
-- **[Checkout Demo](https://lazorpay-green.vercel.app/checkout)**: Test the full payment flow with SOL or USDC
-- **[Payment Links](https://lazorpay-green.vercel.app/pay)**: Create and share payment requests with QR codes
-- **[Merchant Dashboard](https://lazorpay-green.vercel.app/dashboard)**: Track transactions, revenue, and manage links
-- **[Documentation](https://lazorpay-green.vercel.app/docs)**: Interactive API reference with code examples
 
 ## Quick Start
 
-### 1. Clone and Install
-
 ```bash
+# Clone and install
 git clone https://github.com/your-username/lazorpay.git
 cd lazorpay
 npm install
+
+# Configure environment
+cp .env.example .env.local
+
+# Run development server
+npm run dev
 ```
 
-### 2. Environment Setup
+Open [http://localhost:3000](http://localhost:3000)
 
-Create a `.env.local` file:
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](./docs/getting-started.md) | Installation and setup |
+| [Components](./docs/components.md) | Pre-built UI components |
+| [Hooks](./docs/hooks.md) | React hooks reference |
+| [Examples](./docs/examples.md) | Code examples |
+
+## Examples
+
+See the [examples/](./examples/) directory for runnable examples:
+
+- **[nextjs-checkout](./examples/nextjs-checkout/)** - Minimal Next.js checkout integration
+
+## Project Structure
+
+```
+lazorpay/
+├── docs/                   # Documentation (markdown)
+├── examples/               # Runnable examples
+│   └── nextjs-checkout/    # Next.js example
+├── src/
+│   ├── app/                # Next.js pages
+│   ├── components/         # React components
+│   ├── hooks/              # Custom hooks
+│   └── lib/                # Utilities
+└── public/                 # Static assets
+```
+
+## Environment Variables
 
 ```env
 NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
@@ -49,351 +84,21 @@ NEXT_PUBLIC_PAYMASTER_URL=https://kora.devnet.lazorkit.com
 NEXT_PUBLIC_CLUSTER=devnet
 ```
 
-### 3. Run Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see the app.
-
-## Tutorial 1: Setting Up LazorKit Provider
-
-The LazorKit provider wraps your application and enables passkey authentication.
-
-```tsx
-// src/app/layout.tsx
-import { LazorkitProvider } from "@lazorkit/wallet";
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body>
-        <LazorkitProvider
-          rpcUrl="https://api.devnet.solana.com"
-          portalUrl="https://portal.lazor.sh"
-          paymasterConfig={{
-            paymasterUrl: "https://kora.devnet.lazorkit.com",
-            feeTokens: ["USDC"],
-          }}
-        >
-          {children}
-        </LazorkitProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-**Key Configuration Options:**
-- `rpcUrl`: Solana RPC endpoint (devnet or mainnet)
-- `portalUrl`: LazorKit authentication portal
-- `paymasterConfig`: Enable gasless transactions with fee sponsorship
-
-## Tutorial 2: Building a Connect Button
-
-Create a wallet connection component using the `useWallet` hook.
-
-```tsx
-// src/components/ConnectButton.tsx
-"use client";
-import { useWallet } from "@lazorkit/wallet";
-
-export function ConnectButton() {
-  const {
-    isConnected,
-    isConnecting,
-    connect,
-    disconnect,
-    smartWalletPubkey
-  } = useWallet();
-
-  if (isConnecting) {
-    return <button disabled>Connecting...</button>;
-  }
-
-  if (isConnected && smartWalletPubkey) {
-    return (
-      <div>
-        <span>{smartWalletPubkey.toString().slice(0, 8)}...</span>
-        <button onClick={disconnect}>Disconnect</button>
-      </div>
-    );
-  }
-
-  return (
-    <button onClick={connect}>
-      Connect with Passkey
-    </button>
-  );
-}
-```
-
-**How it works:**
-1. User clicks "Connect with Passkey"
-2. LazorKit opens authentication portal
-3. User authenticates with Face ID/Touch ID
-4. Smart wallet address is returned
-5. User is now connected!
-
-## Tutorial 3: Processing Payments
-
-Send SOL or SPL tokens with a single function call.
-
-```tsx
-// src/components/PaymentButton.tsx
-"use client";
-import { useWallet } from "@lazorkit/wallet";
-import { SystemProgram, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
-
-interface PaymentButtonProps {
-  recipient: string;
-  amount: number; // in SOL
-}
-
-export function PaymentButton({ recipient, amount }: PaymentButtonProps) {
-  const { isConnected, connect, signAndSendTransaction, smartWalletPubkey } = useWallet();
-
-  const handlePayment = async () => {
-    // Connect if not already connected
-    if (!isConnected) {
-      await connect();
-      return;
-    }
-
-    try {
-      // Create transfer instruction
-      const instruction = SystemProgram.transfer({
-        fromPubkey: smartWalletPubkey!,
-        toPubkey: new PublicKey(recipient),
-        lamports: amount * LAMPORTS_PER_SOL,
-      });
-
-      // Sign and send with gasless option
-      const signature = await signAndSendTransaction({
-        instructions: [instruction],
-        transactionOptions: {
-          // Pay fees with USDC instead of SOL (gasless)
-          feeToken: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-        },
-      });
-
-      console.log("Transaction successful:", signature);
-      return signature;
-    } catch (error) {
-      console.error("Payment failed:", error);
-      throw error;
-    }
-  };
-
-  return (
-    <button onClick={handlePayment}>
-      Pay {amount} SOL
-    </button>
-  );
-}
-```
-
-**Key Points:**
-- `signAndSendTransaction` handles all signing and submission
-- Setting `feeToken` enables gasless transactions
-- The user only sees a biometric prompt—no complex UX
-
-## Tutorial 4: USDC Transfers
-
-Transfer USDC tokens with automatic Associated Token Account creation.
-
-```tsx
-// src/components/USDCPayment.tsx
-"use client";
-import { useWallet } from "@lazorkit/wallet";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { buildUSDCTransferInstructions } from "@/lib/solana/tokens";
-
-interface USDCPaymentProps {
-  recipient: string;
-  amount: number; // in USDC
-}
-
-export function USDCPaymentButton({ recipient, amount }: USDCPaymentProps) {
-  const { signAndSendTransaction, smartWalletPubkey } = useWallet();
-
-  const handlePayment = async () => {
-    const connection = new Connection("https://api.devnet.solana.com");
-
-    // Build USDC transfer instructions
-    // Automatically creates recipient's token account if needed
-    const instructions = await buildUSDCTransferInstructions({
-      connection,
-      from: smartWalletPubkey!,
-      to: new PublicKey(recipient),
-      amount, // Human-readable (e.g., 10 for 10 USDC)
-    });
-
-    const signature = await signAndSendTransaction({
-      instructions,
-      transactionOptions: {
-        clusterSimulation: "devnet",
-      },
-    });
-
-    console.log("USDC Transfer:", signature);
-    return signature;
-  };
-
-  return <button onClick={handlePayment}>Pay {amount} USDC</button>;
-}
-```
-
-**Key Points:**
-- `buildUSDCTransferInstructions` handles all the complexity
-- Automatically creates recipient's ATA if it doesn't exist
-- Amount is in human-readable format (not base units)
-- USDC has 6 decimals (handled internally)
-
-## Project Structure
-
-```
-lazorpay/
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx          # Root layout with provider
-│   │   ├── page.tsx            # Landing page
-│   │   ├── checkout/           # Checkout demo page
-│   │   ├── pay/                # Payment link pages
-│   │   │   ├── page.tsx        # Link generator
-│   │   │   └── checkout/       # Checkout page for payment links
-│   │   ├── dashboard/          # Merchant dashboard
-│   │   │   ├── page.tsx        # Dashboard overview
-│   │   │   ├── transactions/   # Transaction history
-│   │   │   ├── links/          # Payment links management
-│   │   │   └── settings/       # Account settings
-│   │   └── docs/               # Documentation page
-│   ├── components/
-│   │   ├── layout/             # Header, Footer
-│   │   ├── wallet/             # ConnectButton
-│   │   ├── dashboard/          # Dashboard components
-│   │   └── payment/            # PaymentModal, LazorPayButton
-│   ├── hooks/
-│   │   └── usePaymentLinks.ts  # Payment links state management
-│   ├── lib/
-│   │   ├── lazorkit/           # SDK configuration
-│   │   ├── solana/             # Token utilities (USDC transfers)
-│   │   └── utils/              # Formatting, storage utilities
-│   └── types/                  # TypeScript definitions
-└── public/                     # Static assets
-```
-
-## Components Reference
-
-### LazorPayButton
-
-A drop-in payment button with built-in modal.
-
-```tsx
-<LazorPayButton
-  recipient="WALLET_ADDRESS"
-  amount={10}
-  token="SOL"
-  merchantName="My Store"
-  memo="Order #123"
-  onSuccess={(result) => console.log(result.signature)}
-  onError={(error) => console.error(error)}
-  variant="default"  // "default" | "outline" | "minimal"
-  size="md"          // "sm" | "md" | "lg"
-/>
-```
-
-### ConnectButton
-
-Styled wallet connection button.
-
-```tsx
-<ConnectButton
-  variant="default"  // "default" | "outline" | "ghost"
-  size="md"          // "sm" | "md" | "lg"
-  className="custom-class"
-/>
-```
-
-### PaymentModal
-
-Full-screen payment modal with status tracking.
-
-```tsx
-<PaymentModal
-  isOpen={true}
-  onClose={() => setOpen(false)}
-  recipient="WALLET_ADDRESS"
-  amount={5}
-  token="USDC"
-  merchantName="Coffee Shop"
-  onSuccess={handleSuccess}
-  onError={handleError}
-/>
-```
-
-## useWallet Hook Reference
-
-```tsx
-const {
-  // Connection state
-  isConnected,      // boolean - wallet connected
-  isConnecting,     // boolean - connection in progress
-
-  // Wallet info
-  smartWalletPubkey, // PublicKey | null - smart wallet address
-
-  // Actions
-  connect,          // () => Promise<void> - initiate connection
-  disconnect,       // () => void - disconnect wallet
-
-  // Transactions
-  signAndSendTransaction, // (params) => Promise<string>
-  signMessage,            // (message) => Promise<Uint8Array>
-} = useWallet();
-```
-
-## Deployment
-
-### Deploy to Vercel
-
-1. Push your code to GitHub
-2. Import project in [Vercel](https://vercel.com)
-3. Add environment variables
-4. Deploy!
-
-```bash
-npm run build  # Test production build locally
-```
-
-### Environment Variables for Production
-
-```env
-NEXT_PUBLIC_RPC_URL=https://api.mainnet-beta.solana.com
-NEXT_PUBLIC_PORTAL_URL=https://portal.lazor.sh
-NEXT_PUBLIC_PAYMASTER_URL=https://kora.mainnet.lazorkit.com
-NEXT_PUBLIC_CLUSTER=mainnet
-```
-
 ## Technology Stack
 
 - **Framework**: Next.js 15 (App Router)
 - **Styling**: Tailwind CSS v4
 - **Wallet SDK**: @lazorkit/wallet
-- **Blockchain**: Solana (via @solana/web3.js)
-- **Icons**: Lucide React
-- **QR Codes**: qrcode.react
+- **Blockchain**: Solana (@solana/web3.js)
 
 ## Resources
 
 - [LazorKit Documentation](https://docs.lazorkit.com)
-- [LazorKit GitHub](https://github.com/lazor-kit/lazor-kit)
 - [Solana Web3.js Docs](https://solana-labs.github.io/solana-web3.js/)
 
 ## License
 
-MIT License - feel free to use this as a starting point for your own projects!
+MIT License
 
 ---
 

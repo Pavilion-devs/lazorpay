@@ -246,7 +246,7 @@ export default function DocsPage() {
         <div className="p-6 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/lazorpay-logo.svg"
+              src="/logo.png"
               alt="LazorPay"
               width={120}
               height={40}
