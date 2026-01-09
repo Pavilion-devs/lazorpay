@@ -11,7 +11,7 @@ import {
 import {
   createTransferInstruction,
   getAssociatedTokenAddress,
-  createAssociatedTokenAccountInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
   getAccount,
   TokenAccountNotFoundError,
 } from "@solana/spl-token";
@@ -78,15 +78,19 @@ export async function checkATAExists(
 
 /**
  * Build instructions for a USDC transfer
- * Includes creating the recipient's ATA if it doesn't exist
+ * Uses idempotent ATA creation to avoid async checks and timing issues
+ * 
+ * Note: We use createAssociatedTokenAccountIdempotentInstruction which:
+ * - Creates the ATA if it doesn't exist
+ * - Does nothing (succeeds silently) if it already exists
+ * This avoids async RPC calls that can cause "TransactionTooOld" errors
  */
 export async function buildUSDCTransferInstructions({
-  connection,
   from,
   to,
   amount,
 }: {
-  connection: Connection;
+  connection?: Connection; // Optional - not needed with idempotent approach
   from: PublicKey;
   to: PublicKey;
   amount: number; // Human-readable amount (e.g., 10 for 10 USDC)
@@ -96,26 +100,22 @@ export async function buildUSDCTransferInstructions({
   // Get USDC mint address for current network
   const usdcMintAddress = new PublicKey(getTokenAddress("USDC"));
 
-  // Get sender's ATA
+  // Get sender's ATA (sync - just derives the PDA)
   const senderATA = await getATA(from, usdcMintAddress);
 
-  // Get recipient's ATA
+  // Get recipient's ATA (sync - just derives the PDA)
   const recipientATA = await getATA(to, usdcMintAddress);
 
-  // Check if recipient's ATA exists, if not create it
-  const recipientATAExists = await checkATAExists(connection, recipientATA);
-
-  if (!recipientATAExists) {
-    // Create ATA for recipient (payer will be the fee payer via paymaster)
-    instructions.push(
-      createAssociatedTokenAccountInstruction(
-        from, // payer (will be replaced by paymaster's fee payer)
-        recipientATA, // ata address
-        to, // owner
-        usdcMintAddress // mint
-      )
-    );
-  }
+  // Use idempotent instruction - creates ATA if doesn't exist, no-op if exists
+  // This avoids the async checkATAExists call which can cause timing issues
+  instructions.push(
+    createAssociatedTokenAccountIdempotentInstruction(
+      from, // payer (will be replaced by paymaster's fee payer)
+      recipientATA, // ata address
+      to, // owner
+      usdcMintAddress // mint
+    )
+  );
 
   // Convert amount to base units (6 decimals for USDC)
   const amountInBaseUnits = toBaseUnits(amount, "USDC");

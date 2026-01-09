@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# session/chat history files
+*this-session-is-being-continued-from-a-previous-co.txt

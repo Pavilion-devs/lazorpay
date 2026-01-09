@@ -22,7 +22,7 @@ import { PublicKey, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } fr
 import { truncateAddress, formatAmount, copyToClipboard } from "@/lib/utils/format";
 import { getExplorerUrl, LAZORKIT_CONFIG } from "@/lib/lazorkit/config";
 import { addTransaction } from "@/lib/utils/storage";
-import { buildUSDCTransferInstructions, createConnection } from "@/lib/solana/tokens";
+import { buildUSDCTransferInstructions } from "@/lib/solana/tokens";
 import type { PaymentStatus, PaymentResult } from "@/types";
 
 interface PaymentModalProps {
@@ -81,10 +81,8 @@ export function PaymentModal({
       let instructions: TransactionInstruction[];
 
       if (token === "USDC") {
-        // Build USDC transfer instructions (may include ATA creation)
-        const connection = createConnection();
+        // Build USDC transfer instructions (includes idempotent ATA creation)
         instructions = await buildUSDCTransferInstructions({
-          connection,
           from: smartWalletPubkey,
           to: recipientPubkey,
           amount,
