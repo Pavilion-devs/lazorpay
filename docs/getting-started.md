@@ -31,7 +31,6 @@ export default function RootLayout({ children }) {
           portalUrl="https://portal.lazor.sh"
           paymasterConfig={{
             paymasterUrl: "https://kora.devnet.lazorkit.com",
-            feeTokens: ["USDC"],
           }}
         >
           {children}
@@ -50,7 +49,6 @@ export default function RootLayout({ children }) {
 | `portalUrl` | string | LazorKit authentication portal URL |
 | `paymasterConfig` | object | Configuration for gasless transactions |
 | `paymasterConfig.paymasterUrl` | string | Kora paymaster endpoint |
-| `paymasterConfig.feeTokens` | string[] | Supported fee tokens (e.g., ["USDC"]) |
 
 ## Step 2: Add Wallet Connection
 
